@@ -1,15 +1,15 @@
 FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8
 
 # set path to our python api file
-ENV MODULE_NAME="server.jp_api"
+ENV MODULE_NAME="server.api"
 
 # copy contents of project into docker
 COPY ./pyproject.toml /app/pyproject.toml
 COPY ./data/features/ /app/data/features/
-COPY ./job_predictor/core /app/job_predictor/core
-COPY ./job_predictor/utils /app/job_predictor/utils
+COPY ./{{ cookiecutter.source_name }}/core /app/{{ cookiecutter.source_name }}/core
+COPY ./{{ cookiecutter.source_name }}/util.py /app/{{ cookiecutter.source_name }}/util.py
 
-COPY ./job_predictor/features/job_predictor/ /app/job_predictor/features/job_predictor/
+COPY ./{{ cookiecutter.source_name }}/features/{{ cookiecutter.source_name }}/ /app/{{ cookiecutter.source_name }}/features/job_predictor/
 
 
 # upgrade pip
