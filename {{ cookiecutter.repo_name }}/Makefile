@@ -1,4 +1,4 @@
-.PHONY: clean data lint install docker push
+.PHONY: clean data lint install docker push format
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -14,39 +14,37 @@ SRC_DIR = {{ cookiecutter.source_name }}
 #################################################################################
 # COMMANDS                                                                      #
 #################################################################################
+ifeq ($(OS),Windows_NT)
+VENV_BIN = .venv/Script
+else
+VENV_BIN = .venv/bin
+endif
+
 
 ## Set up python interpreter environment
 create_environment:
-    @echo "Creating environment"
+	@echo ">>> Creating environment"
 	$(PYTHON_INTERPRETER) -m pip install --upgrade pip
-    $(PYTHON_INTERPRETER) -m pip install -U poetry
-    $(PYTHON_INTERPRETER) -m poetry config virtualenvs.create true
-    $(PYTHON_INTERPRETER) -m poetry config virtualenvs.in-project true
-    @echo "Activate virtual environment for windows and posix"
-    case "$(uname -s)" in
-       CYGWIN*|MINGW32*|MSYS*|MINGW*)
-         @echo 'MS Windows'
-         source .venv/Scripts/activate
-         ;;
-       # Add here more strings to compare
-       # See correspondence table at the bottom of this answer
-       *)
-         @echo 'POSIX'
-         source .venv/bin/activate
-         ;;
-    esac
+	$(PYTHON_INTERPRETER) -m pip install -U poetry
+	$(PYTHON_INTERPRETER) -m poetry config virtualenvs.create true
+	$(PYTHON_INTERPRETER) -m poetry config virtualenvs.in-project true
 
 ## Install Python Dependencies
 install: create_environment
-    @echo "Installing python dependencies"
-    $(PYTHON_INTERPRETER) -m poetry update --lock # ensures all dependencies are as up-to-date as possible
-    $(PYTHON_INTERPRETER) -m poetry install --no-root
+	@echo ">>> Installing python dependencies"
+	$(PYTHON_INTERPRETER) -m poetry update --lock # ensures all dependencies are as up-to-date as possible
+	$(PYTHON_INTERPRETER) -m poetry install --no-root
+
+	@echo ">>> Activate virtual environment for windows and posix"
+	@echo "$(shell pwd) $(PWD) $(VENV_BIN)"
+	. $(VENV_BIN)/activate && exec bash
+
 
 
 ## Make Dataset
-data: install
-    @echo "Making dataset"
-	$(PYTHON_INTERPRETER) $(SRC_DIR)/data/make_dataset.py data
+data:
+	@echo ">>> Making dataset"
+	PYTHONPATH=$(SRC_DIR) $(PYTHON_INTERPRETER) $(SRC_DIR)/data/make_dataset.py data
 
 ## Delete all compiled Python files
 clean:
@@ -57,27 +55,33 @@ clean:
 lint:
 	flake8 $(SRC_DIR)
 
-docker:
-    docker-compose build
+## Format using black
+format:
+	black $(SRC_DIR)
 
+## Building docker repos
+docker:
+	docker-compose build
+
+## Pushing docker repos
 push: docker
-    docker-compose up
+	docker-compose up
 
 ## Upload Data to S3
 sync_data_to_s3:
-    ifeq (default,$(PROFILE))
-        aws s3 sync data/ s3://$(BUCKET)/data/
-    else
-        aws s3 sync data/ s3://$(BUCKET)/data/ --profile $(PROFILE)
-    endif
+ifeq (default,$(PROFILE))
+	aws s3 sync data/ s3://$(BUCKET)/data/
+else
+	aws s3 sync data/ s3://$(BUCKET)/data/ --profile $(PROFILE)
+endif
 
 ## Download Data from S3
 sync_data_from_s3:
-    ifeq (default,$(PROFILE))
-        aws s3 sync s3://$(BUCKET)/data/ data/
-    else
-        aws s3 sync s3://$(BUCKET)/data/ data/ --profile $(PROFILE)
-    endif
+ifeq (default,$(PROFILE))
+	aws s3 sync s3://$(BUCKET)/data/ data/
+else
+	aws s3 sync s3://$(BUCKET)/data/ data/ --profile $(PROFILE)
+endif
 
 #################################################################################
 # PROJECT RULES                                                                 #
