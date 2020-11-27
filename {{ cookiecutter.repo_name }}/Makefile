@@ -59,6 +59,13 @@ lint:
 format:
 	black $(SRC_DIR)
 
+## Run bandit security test
+bandit:
+	poetry run bandit -n 3 -r $(SRC_DIR)
+
+test:
+	PYTHONPATH=$(SRC_DIR) poetry run pytest
+
 ## Building docker repos
 docker:
 	docker-compose build
