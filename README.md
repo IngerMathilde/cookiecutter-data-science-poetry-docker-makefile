@@ -28,7 +28,7 @@ $ conda install cookiecutter
 ### To start a new project, run:
 ------------
 
-    cookiecutter https://github.com/IngerMathilde/cookiecutter-data-science-dev
+    cookiecutter https://github.com/IngerMathilde/cookiecutter-data-science-poetry-makefile
 
 
 
